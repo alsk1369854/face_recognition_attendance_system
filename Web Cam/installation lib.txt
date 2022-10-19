@@ -1,0 +1,10 @@
+1. TFT_eSPI 
+Verson: 2.3.4
+URL: https://github.com/Bodmer/TFT_eSPI
+
+2. TJpg_Decoder
+Verson: 1.0.8
+URL: https://github.com/Bodmer/TJpg_Decoder
+
+3. ArduinoJson
+Verson: 6.19.4
