@@ -1,10 +1,20 @@
+#include <FS.h>
 #include "esp_camera.h"
 #include <WiFi.h>
+#include <WiFiManager.h>
+#include "SPIFFS.h"
 #include <SPI.h>
 #include <TFT_eSPI.h>
 #include <TJpg_Decoder.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+
+// WiFi config json file
+/*{
+  "SSID": "WebCam_SSID",
+  "PASS": "password"
+}*/
+#define WIFI_CONFIG_JSON_PATH "/WiFi_config.json"
 
 // Camera model: CAMERA_MODEL_AI_THINKER
 #define PWDN_GPIO_NUM     32
@@ -28,13 +38,26 @@
 #define GFXFF              1      // font-style
 #define FSB9 &FreeSerifBold9pt7b // font-family
 
-const char* ssid = "chts320";
-const char* password = "12345678";
-const char* serverImageUploadUrl = "http://192.168.1.37:8888/imageUpload/1";
-const unsigned long timeout = 10000; // 30 seconds
-const unsigned long delayTime = 3000;
-bool isWiFiConnected = false;
 
+// WebCam info
+String WEBCAM_DEVICE_ID = "A001";
+String SERVER_IMAGE_UPLOAD_URL = "http://192.168.1.37:8888/imageUpload/";
+
+// Const Value
+String serverImageUploadUrl = SERVER_IMAGE_UPLOAD_URL + WEBCAM_DEVICE_ID;
+const unsigned long wifiConnectTimeout = 5000; // 5 Sec
+const unsigned long displayDelayTime = 3000; // 3 Sec
+
+// Default Wifi Connection ID and Password
+char autoConnectWifiSSID[50] = "WebCam_SSID";
+char autoConnectWifiPASS[50] = "password";
+String wifiManagerAPName = String("WebCam_") + WEBCAM_DEVICE_ID;
+String wifiManagerAPPassword = "password";
+bool shouldSaveWifiConfigFile = false;
+bool wifiForceConfig = false;
+int rebootCountdownTime = 5; // 5 Sec 
+
+WiFiManager wm;
 TFT_eSPI tft = TFT_eSPI();
 
 // Start Class ScreenController ==========================================
@@ -45,6 +68,8 @@ class ScreenController {
     void drawString(const char*, uint16_t, uint16_t, int);
     void drawFaceRect(uint16_t, uint16_t, uint16_t, uint16_t, uint16_t, uint32_t);
     void drawJpg(camera_fb_t*);
+    void displayWifiConnectionFailedAndRebootAfterCountdown(int);
+    void displayWiFiManagerAPMInfo(String, String, String);
   
 };
 
@@ -56,6 +81,7 @@ bool ScreenController::tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, 
 
 void ScreenController::init(){
   tft.begin();
+  
   tft.fillScreen(TFT_BLACK);
   tft.setFreeFont(FSB9);
   tft.setTextColor(TFT_WHITE);
@@ -82,8 +108,153 @@ void ScreenController::drawJpg(camera_fb_t *fb){
   tft.setRotation(0);
 }
 
+void ScreenController::displayWifiConnectionFailedAndRebootAfterCountdown(int countdown){
+  Serial.println("In Countdown");
+  tft.fillScreen(TFT_BLACK);
+  tft.drawString("Connection Failed", 15, 110, 4);
+  tft.drawString("Reboot After", 50, 140, 4);
+  
+  for(int number = countdown; number > 0; number--){  
+    tft.setTextColor(TFT_WHITE);
+    tft.drawString(String(number), 105, 200, 7);
+    delay(1000);
+    if(number > 1){
+      tft.setTextColor(TFT_BLACK);
+      tft.drawString(String(number), 105, 200, 7);
+    }
+  } 
+}
+
+void ScreenController::displayWiFiManagerAPMInfo(String apName, String apPassword, String apIP){
+  tft.fillScreen(TFT_BLACK);
+  tft.drawString("Please set WiFi", 35, 120, 4);
+  String labelAPName = "AP_ID: " + apName;
+  tft.drawString(labelAPName, 25, 170, GFXFF);
+  String labelAPPassword = "PASS:  " + apPassword;
+  tft.drawString(labelAPPassword, 25, 200, GFXFF);
+  String labelIP_Addr = String("Access: ") + apIP;
+  tft.drawString(labelIP_Addr, 25, 230, GFXFF);
+}
+
 ScreenController screenController;
 // End Class ScreenController ==========================================
+
+
+
+// Start WiFi auto Connect =================================== 
+void initSPIFFS(){
+  if(SPIFFS.begin(true)){
+    Serial.println("SPIFFS loading completed");
+    bool wifiConfigFileExists = loadWifiConfigFile();
+    if(!wifiConfigFileExists){
+      saveWifiConfigFile();
+    }
+  }else{
+    Serial.println("SPIFFS failed to load");
+  }  
+}
+
+void saveWifiConfigFile(){
+  Serial.println("Saving Wifi configuration...");
+  
+  // create a JSON document
+  StaticJsonDocument<512> json;
+  json["SSID"] = autoConnectWifiSSID;
+  json["PASS"] = autoConnectWifiPASS;
+
+  File wifiConfigFile = SPIFFS.open(WIFI_CONFIG_JSON_PATH, "w");
+  if(wifiConfigFile){
+    serializeJsonPretty(json, Serial);
+    if(serializeJson(json, wifiConfigFile) == 0){
+      // Error writing file
+      Serial.println("Failed to write to file");
+    }
+  }else{
+    // Failed to open WiFi config
+    Serial.println("Failed to open WiFi config file for writing");
+  }
+
+  wifiConfigFile.close();
+}
+
+bool loadWifiConfigFile(){
+  Serial.println("Loading Wifi configuration...");
+
+  if(SPIFFS.exists(WIFI_CONFIG_JSON_PATH)){
+    // Exists WiFi config json
+    File wifiConfigFile = SPIFFS.open(WIFI_CONFIG_JSON_PATH, "r");
+    if(wifiConfigFile){
+      StaticJsonDocument<512> json;
+      DeserializationError error = deserializeJson(json, wifiConfigFile);
+      serializeJsonPretty(json, Serial);
+      if(!error){
+        // Parsing Json
+        strcpy(autoConnectWifiSSID, json["SSID"]);
+        strcpy(autoConnectWifiPASS, json["PASS"]);
+        // autoConnectWifiPASS = json["PASS"].as<int>();
+
+        wifiConfigFile.close();
+        return true;
+      }else{
+        // Error loading Json data
+        Serial.println("Failed to load json config");
+      }
+    }else{
+      // Failed to open WiFi config
+      Serial.println("Failed to open WiFi config file for reading");
+    }
+    wifiConfigFile.close();
+  }
+  return false;
+}
+
+void saveWifiConfigCallback(){
+    shouldSaveWifiConfigFile = true;
+}
+
+void wifiConfigModeCallback(WiFiManager *myWiFiManager){
+  screenController.displayWiFiManagerAPMInfo(wifiManagerAPName, wifiManagerAPPassword, WiFi.softAPIP().toString());
+}
+
+void initWifiManagerMode(){
+  wm.setDebugOutput(false);
+  
+  wm.resetSettings();
+
+  wm.setSaveConfigCallback(saveWifiConfigCallback);
+
+  wm.setAPCallback(wifiConfigModeCallback);
+
+  WiFiManagerParameter ssid_text_box("key_ssid", "Enter auto connect SSID", autoConnectWifiSSID, 50);
+  WiFiManagerParameter password_text_box("key_pass", "Enter auto connect Password", autoConnectWifiPASS, 50);
+
+  wm.addParameter(&ssid_text_box);
+  wm.addParameter(&password_text_box);
+
+  if(wifiForceConfig){
+    if(!wm.startConfigPortal((const char*)wifiManagerAPName.c_str(), (const char*)wifiManagerAPPassword.c_str())){
+      Serial.println("Wifi Manager conntect failed");
+      screenController.displayWifiConnectionFailedAndRebootAfterCountdown(rebootCountdownTime);
+      ESP.restart();
+      delay(5000);
+    }
+  }else{
+    if(!wm.autoConnect((const char*)wifiManagerAPName.c_str(), (const char*)wifiManagerAPPassword.c_str())){
+      Serial.println("Wifi Manager conntect failed");
+      screenController.displayWifiConnectionFailedAndRebootAfterCountdown(rebootCountdownTime);
+      ESP.restart();
+      delay(5000);
+    }
+  }
+
+  strncpy(autoConnectWifiSSID, ssid_text_box.getValue(), sizeof(autoConnectWifiSSID));
+  strncpy(autoConnectWifiPASS, password_text_box.getValue(), sizeof(autoConnectWifiPASS));
+
+  if(shouldSaveWifiConfigFile){
+    saveWifiConfigFile();
+  }
+}
+// End WiFi auto Connect =================================== 
 
 
 void camera_init(){
@@ -127,17 +298,16 @@ void camera_init(){
 }
 
 
-bool wifiConnect(){
+void wifiConnect(){
   unsigned long startingTime = millis();
-  WiFi.begin(ssid, password);
+  WiFi.begin(autoConnectWifiSSID, autoConnectWifiPASS);
 
   while(WiFi.status() != WL_CONNECTED){
     delay(500);
-    if((millis() - startingTime) > timeout){
-      return false;  
+    if((millis() - startingTime) > wifiConnectTimeout){
+      initWifiManagerMode();
     }
   }
-  return true;
 }
 
 
@@ -171,7 +341,7 @@ void parsingResult(String response){
   }
 
   if(KnownFaceValueList.size() > 0){
-    delay(delayTime);
+    delay(displayDelayTime);
   }
 }
 
@@ -186,7 +356,7 @@ void postingImage(camera_fb_t *fb){
   }else{
     //Error
     screenController.drawString("Check Your Server", 8, 4, GFXFF);
-    delay(delayTime);
+    delay(displayDelayTime);
   }
   client.end();
 }
@@ -200,12 +370,7 @@ void sendingImage(){
     Serial.println("Camera Image to Display Here!"); 
     screenController.drawJpg(fb);
     
-    if(isWiFiConnected){
-      postingImage(fb);
-    }else{
-      screenController.drawString("Check Wifi credential!", 8, 4, GFXFF);
-      delay(delayTime);
-    }
+    postingImage(fb);
   }
   esp_camera_fb_return(fb);
 }
@@ -214,10 +379,15 @@ void sendingImage(){
 void setup() {
   Serial.begin(115200);
   screenController.init();
+  initSPIFFS();
+  wifiConnect();
   camera_init();
-  isWiFiConnected = wifiConnect();
 }
 
 void loop() {
+  // WiFi Config Reset
+  // wifiForceConfig = true;
+  // initWifiManagerMode();
+  
   sendingImage();
 }
