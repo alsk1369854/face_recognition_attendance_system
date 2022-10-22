@@ -30,7 +30,7 @@
 
 const char* ssid = "chts320";
 const char* password = "12345678";
-const char* serverImageUploadUrl = "http://192.168.1.37:8888/imageUpload";
+const char* serverImageUploadUrl = "http://192.168.1.37:8888/imageUpload/1";
 const unsigned long timeout = 10000; // 30 seconds
 const unsigned long delayTime = 3000;
 bool isWiFiConnected = false;
