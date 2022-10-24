@@ -2,7 +2,7 @@ import numpy as np
 import face_recognition as fr
 import cv2
 
-known_face_data_path = r'./src/Train_face/known_face_data.npy'
+known_face_data_path = r'./src/Face_recognition/Train_face/known_face_data.npy'
 # gpu: 'cnn' ; other: 'hog'
 detection_model_type = 'hog'  # 'cnn' | 'hog'
 landmarks_model = 'large'  # 'large' | 'small'
@@ -12,8 +12,8 @@ class FaceRecognizer:
         # load_known_faces
         print('Loading known face data ...')
         with open(known_face_data_path, 'rb') as f:
-            self.person_names = np.load(f)
-            self.known_faces = np.load(f)
+            self.person_id_list = np.load(f)
+            self.known_encoded_face_list = np.load(f)
 
     def detection_binary_image(self, binary_image_data):
         # result data
@@ -42,21 +42,21 @@ class FaceRecognizer:
         # 遍歷畫面中所找找到的臉部特徵
         for face_location, encoded_face in zip(face_location_list, encoded_face_list):
             y1, x2, y2, x1 = face_location
-            matches = fr.compare_faces(self.known_faces, encoded_face, tolerance=0.4)
-            face_distance = fr.face_distance(self.known_faces, encoded_face)
+            matches = fr.compare_faces(self.known_encoded_face_list, encoded_face, tolerance=0.4)
+            face_distance = fr.face_distance(self.known_encoded_face_list, encoded_face)
             print(face_distance)
             matchIndex = np.argmin(face_distance)
             # support = face_distance[matchIndex]
 
             if matches[matchIndex]:
                 # known face
-                person_name = self.person_names[matchIndex]
+                person_id = self.person_id_list[matchIndex]
                 face_value = {
                     'x1': x1,
                     'y1': y1,
                     'x2': x2,
                     'y2': y2,
-                    'name': person_name
+                    'person_id': person_id
                 }
                 result['known_face_value_list'].append(face_value)
 

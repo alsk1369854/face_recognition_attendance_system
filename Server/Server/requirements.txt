@@ -1,3 +1,5 @@
-flask
-cv2
-numpy
+flask~=1.1.2
+opencv-python~=4.6.0.66
+numpy~=1.21.5
+pymysql~=1.0.2
+opencv-python~=4.6.0.66
