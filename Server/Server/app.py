@@ -1,4 +1,6 @@
-from flask import Flask, render_template, redirect, url_for, request, Response, session
+import os
+from flask import Flask,  redirect, url_for, request, Response, session, send_from_directory
+from datetime import timedelta
 import json
 # import uuid
 from src.Server_manager.MVC.DispatcherServlet import DispatcherServlet
@@ -6,35 +8,49 @@ from src.Server_manager.Database_connect.PymysqlUtil import PymysqlUtil
 from src.Face_recognition.FaceRecognizer import FaceRecognizer
 
 dispatcher_servlet = DispatcherServlet()
-face_recognizer = FaceRecognizer()
-
-LISTEN_POST = 8888
-
-app = Flask(__name__)
 
 
-# 設計 API 接口
+app = Flask(__name__, static_folder='front_end/build')
+app.secret_key = 'attendance_server'
+app.permanent_session_lifetime = timedelta(days=31)
+
+
+# Serve React App
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
+
 @app.route('/attendance', methods=['POST', 'GET'])  # templates router
-def index():
-    print('servlet_path')
+def attendance():
     # if request.method == "POST":
     #     user = request.form['name']
     #     session['user'] = user
+    print('here')
 
-    # print(servlet_path)
     db = PymysqlUtil.get_connect()
     connect = db['connect']
 
-    operate, value = dispatcher_servlet.service(request=request, session=session, servlet_path='attendance')
+    operate = None
+    value = None
+    try:
 
-    print('here')
-    connect.commit()
+        operate, value = dispatcher_servlet.service(request=request, session=session, servlet_path='attendance')
+
+        connect.commit()
+    except Exception as error:
+        print('app error: ' + repr(error))
+        connect.rollback()
+
     PymysqlUtil.close_connect()
 
     if 'redirect' == operate:
         return redirect(url_for(value))
     elif 'render_template' == operate:
-        return render_template(value['template'], data=value['data'])
+        return send_from_directory(app.static_folder, value['template'])
     else:
         return value
 
@@ -43,20 +59,31 @@ def index():
 def face_recognition(webcam_device_id):
     print(f'face_recognition: {webcam_device_id}')
 
-    session['webcam_device_id'] = webcam_device_id
-    request.args.set('operate', 'detection')
+    session['webcam_device_id'] = 'A001'
 
     db = PymysqlUtil.get_connect()
     connect = db['connect']
 
-    print(request.args.get('test'))
-    operate, value = dispatcher_servlet.service(request, session, servlet_path='face_recognition')
+    operate = None
+    value = None
+    try:
 
-    connect.commit()
+        # print(request.args.get('test'))
+        operate, value = dispatcher_servlet.service(request, session, servlet_path='face_recognition')
+
+        connect.commit()
+    except Exception as error:
+        print('app error: ' + repr(error))
+        connect.rollback()
+
     PymysqlUtil.close_connect()
 
     return value
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=LISTEN_POST)
+    app.secret_key = 'super secret key'
+    app.config['SESSION_TYPE'] = 'filesystem'
+
+    # app.run(use_reloader=True, port=5000, threaded=True)
+    app.run(host="0.0.0.0", port=8888, use_reloader=True, threaded=True)

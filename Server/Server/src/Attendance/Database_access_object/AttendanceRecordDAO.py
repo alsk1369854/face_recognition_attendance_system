@@ -7,14 +7,27 @@ class AttendanceRecordDAO:
     room_DAO = None
 
     def insert_new_attendance_record(self, attendance_record: AttendanceRecord):
+    # def insert_new_attendance_record(self, room_id: str, person_id: str, date_time_stamp: str):
         db = PymysqlUtil.get_connect()
+        connect = db['connect']
         cursor = db['cursor']
 
-        sql = "insert into attendance_record (room, person, date_time_stamp) \n" \
-              "values (%s, %s, %s)"
+        values = (attendance_record.room._id, attendance_record.person._id, attendance_record.date_time_stamp)
 
-        return cursor.execute(sql,
-                       (attendance_record.room._id, attendance_record.person._id, attendance_record.date_time_stamp))
+        sql = "insert into attendance_record (room, person, date_time_stamp) \n" \
+              "values (%s, %s, STR_TO_DATE('%s', '%%Y-%%d-%%m %%H:%%i:%%s'))" % values
+
+        # sql = "insert into attendance_record (room, person, date_time_stamp) " \
+        #       "values (%s, %s, STR_TO_DATE('%s' '%%Y-%%d-%%m %%H:%%i:%%s'))"
+        #
+        # values = (attendance_record.room._id, attendance_record.person._id, attendance_record.date_time_stamp)
+        # change = cursor.execute(sql, values)
+
+        change = cursor.execute(sql)
+        connect.commit()
+        return change
+
+
 
     def get_room_records_between_two_datetime_list(self, room_id, start_datetime, end_datetime, order_by="_id"):
         db = PymysqlUtil.get_connect()
@@ -71,4 +84,3 @@ class AttendanceRecordDAO:
         attendance_record = AttendanceRecord(_id, room, person, date_time_stamp)
 
         return attendance_record
-

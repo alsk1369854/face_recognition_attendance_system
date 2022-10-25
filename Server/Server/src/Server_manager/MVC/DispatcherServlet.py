@@ -9,7 +9,7 @@ class DispatcherServlet:
 
     def service(self, request, session, servlet_path):
         try:
-            operate = request.args.get('operate')
+            operate = request.args.get('operate', default='index')
             _class = self.bean_factory.get_bean(servlet_path)
             if _class:
                 if hasattr(_class, operate):
@@ -30,17 +30,13 @@ class DispatcherServlet:
                                 value[parameter_name] = request.args.get(parameter_name)
 
                         # call method and return
-                        v1, v2 = method(**value)
-                        print(v1, v2)
-                        return v1, v2
+                        return method(**value)
 
                 else:
                     # has not method of operate, call index method
                     method = getattr(_class, 'index')
                     print('index')
-                    v1, v2 = method()
-                    print(v1, v2)
-                    return v1, v2
+                    return method()
 
         except Exception as error:
             print('DispatcherServlet error: ' + repr(error))

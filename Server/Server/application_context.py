@@ -5,7 +5,7 @@ beans = {
     },
 
     # Server => Controller ========================================================================
-    # Dispatcher 中的 servlet_path = attendance, 則由 AttendanceController 來處理
+    # Dispatcher 中的 servlet_path = build, 則由 AttendanceController 來處理
     # 在 BeanFactory 中 bean_map 對於 bean_class 對應的 bean_id
     "attendance": {
         # 對應的 class 位置, 用於 bean 的建立(在此僅提示作用, 實際建立在 BeanFactory 執行)
@@ -14,8 +14,6 @@ beans = {
         "property_beans": {
             "attendance_record_DAO": "attendance_record_DAO",
             "room_DAO": "room_DAO",
-            "person_DAO": "person_DAO"
-
         }
     },
 
@@ -24,7 +22,8 @@ beans = {
         "property_beans": {
             "face_recognizer": "face_recognizer",
             "attendance_record_DAO": "attendance_record_DAO",
-            "room_DAO": "room_DAO"
+            "room_DAO": "room_DAO",
+            "person_DAO": "person_DAO"
         }
     },
 

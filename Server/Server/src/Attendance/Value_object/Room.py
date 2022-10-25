@@ -1,4 +1,3 @@
-
 class Room:
     def __init__(self, _id: int = None, name: str = None, webcam_device_id: int = None):
         self._id: int = _id
@@ -7,3 +6,6 @@ class Room:
 
     def __str__(self):
         return f"(_id:{self._id}, name:{self.name}, webcam_device_id:{self.webcam_device_id})"
+
+    def get_id(self):
+        return self._id

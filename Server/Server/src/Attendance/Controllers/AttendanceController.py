@@ -9,7 +9,7 @@ class AttendanceController:
 
     def index(self):
         value = {
-            'template': 'attendance.html',
+            'template': 'index.html',
             'data': {}
         }
         return "render_template", value

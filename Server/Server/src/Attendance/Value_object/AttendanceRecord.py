@@ -1,5 +1,5 @@
-from src.Attendance.Value_object.Room import Room
 from src.Attendance.Value_object.Person import Person
+from src.Attendance.Value_object.Room import Room
 
 
 class AttendanceRecord:
@@ -11,3 +11,12 @@ class AttendanceRecord:
 
     def __str__(self):
         return f"(_id:{self._id}, Room:{self.room}, Person:{self.person}, date_time_stamp:{self.date_time_stamp})"
+
+    def get_id(self):
+        return self._id
+
+    def get_room(self):
+        return self.room
+
+    def get_person(self):
+        return self.person
