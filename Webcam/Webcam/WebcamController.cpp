@@ -263,7 +263,7 @@ void WebcamController::parsingResult(String response){
     int y1 = item["y1"];
     int x2 = item["x2"];
     int y2 = item["y2"];
-    const char* personName = item["name"];
+    const char* personName = item["person_name"];
     ScreenController::drawFaceRect(x1, y1, x2 - x1, y2 - y1, 3, TFT_GREEN);
     ScreenController::drawString(personName, x1+4, y2, 4);
   }
