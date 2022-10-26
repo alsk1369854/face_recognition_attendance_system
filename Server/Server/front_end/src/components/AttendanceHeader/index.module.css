@@ -1,0 +1,16 @@
+.attendance_header{
+    display: flex;
+    align-items: center;
+    height: 80px;
+    background-color: rgb(255,255,255);
+    /* padding: 20px; */
+}
+
+.title{
+    
+    padding: 10px 0px 0px 20px;
+    
+    font-weight: bold;
+    font-size: 30px;
+    color: rgb(67, 67, 67)
+}
