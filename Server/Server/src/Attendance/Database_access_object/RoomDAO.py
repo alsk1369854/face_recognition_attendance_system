@@ -3,6 +3,29 @@ from src.Attendance.Value_object.Room import Room
 
 
 class RoomDAO:
+    def get_all(self):
+        db = PymysqlUtil.get_connect()
+        cursor = db['cursor']
+
+        sql = "select * from room order by name"
+
+        cursor.execute(sql)
+
+        result_list = cursor.fetchall()
+        columns_name_map = PymysqlUtil.columns_name_of_index_map(cursor)
+
+        room_list = []
+        for result in result_list:
+            _id = result[columns_name_map['_id']]
+            name = result[columns_name_map['name']]
+            webcam_device_id = result[columns_name_map['webcam_device_id']]
+
+            # build value object
+            room = Room(_id=_id, name=name, webcam_device_id=webcam_device_id)
+            room_list.append(room)
+
+        return room_list
+
     def get_room_by_id(self, room_id):
         db = PymysqlUtil.get_connect()
         cursor = db['cursor']

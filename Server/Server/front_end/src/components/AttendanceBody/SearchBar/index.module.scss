@@ -1,0 +1,48 @@
+.search_bar{
+    background-color: rgb(255,255,255);
+    margin: 25px;
+    padding: 25px 25px;
+    height: 70px;
+    
+    display:flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .search_item_container{
+        display:flex;
+        align-items: center;
+        justify-content: space-around;
+        width: 80%;
+
+        .select_item{
+            margin: 0px 20px;
+
+            .select_item_name{
+                font-size: 18px;
+                color: rgb(142, 142, 142);
+                padding-right: 5px;
+            }
+        }
+    }
+
+    .commit_button_container{
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+
+        .commit_button{
+            margin: 0px 5px;
+        }
+    }
+}
+
+@media screen and (max-width: 1085px) {
+    .search_bar{
+        flex-direction:column;
+        height: 150px;
+
+        .search_item_container{
+            width: 100%;
+        }
+    }
+}

@@ -1,0 +1,12 @@
+.result_list_container{
+    background-color: rgb(255,255,255);
+    /* margin: 0px 25px 0px 25px; */
+    margin: 25px;
+    height: calc(100% - 75px);
+}
+
+@media screen and (max-width: 1085px) {
+    .result_list_container{
+        height: calc(100% - 155px);
+    }
+}

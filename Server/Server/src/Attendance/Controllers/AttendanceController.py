@@ -23,3 +23,8 @@ class AttendanceController:
                                                                                   order_by='person')
         response = json.dumps(attendance_record_list, default=JsonUtil.obj_dict)
         return "", Response(response=response, status=200, mimetype="application/json")
+
+    def get_all_room(self):
+        room = self.room_DAO.get_all()
+        response = json.dumps(room, default=JsonUtil.obj_dict)
+        return "", Response(response=response, status=200, mimetype="application/json")

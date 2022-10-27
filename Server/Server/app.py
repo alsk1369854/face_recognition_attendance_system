@@ -1,5 +1,6 @@
 import os
 from flask import Flask,  redirect, url_for, request, Response, session, send_from_directory
+from flask_cors import CORS
 from datetime import timedelta
 import json
 # import uuid
@@ -13,6 +14,7 @@ dispatcher_servlet = DispatcherServlet()
 app = Flask(__name__, static_folder='front_end/build')
 app.secret_key = 'attendance_server'
 app.permanent_session_lifetime = timedelta(days=31)
+CORS(app)
 
 
 # Serve React App
