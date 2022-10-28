@@ -16,11 +16,15 @@
 
 ## 項目畫面
 ### WebCam 
+<p align="center">
 <img width='400' src='https://raw.githubusercontent.com/alsk1369854/face_recognition_attendance_system/master/screenshots/Webcam.gif'/>
+</p>
 <br/>
 
 ### Client
-<img width='400' src='https://raw.githubusercontent.com/alsk1369854/face_recognition_attendance_system/master/screenshots/Client.gif'/>
+<p align="center">
+<img width='700' src='https://raw.githubusercontent.com/alsk1369854/face_recognition_attendance_system/master/screenshots/Client.gif'/>
+</p>
 <br/>
 
 <br/>
