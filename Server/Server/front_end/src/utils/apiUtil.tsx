@@ -10,6 +10,7 @@ export interface iRoomRecordsBetweenTwoDatetime {
   room_name: string,
   start_datetime: string,
   end_datetime: string,
+  order_by?: string
 }
 
 export const postFunc = (data: any) => userRequest.post('/users', data)
@@ -17,5 +18,8 @@ export const getFunc = (url: string) => userRequest.get(url)
 
 export const getAllRoom = () => getFunc('/attendance?operate=get_all_room')
 export const getRoomRecordsBetweenTwoDatetime = (values: any) => {
-  return getFunc(`/attendance?operate=search&room_name=${values.room_name}&start_datetime=${values.start_datetime}&end_datetime=${values.end_datetime}`)
+  const url = (values.order_by) ?
+    `/attendance?operate=search&room_name=${values.room_name}&start_datetime=${values.start_datetime}&end_datetime=${values.end_datetime}&order_by=${values.order_by}`
+    : `/attendance?operate=search&room_name=${values.room_name}&start_datetime=${values.start_datetime}&end_datetime=${values.end_datetime}`
+  return getFunc(url)
 }

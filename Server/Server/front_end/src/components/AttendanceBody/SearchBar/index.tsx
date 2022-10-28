@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, FC } from 'react'
 
 import style from './index.module.scss'
 
@@ -8,7 +8,10 @@ import { Select, DatePicker, Button } from 'antd';
 import type { RangePickerProps } from 'antd/es/date-picker';
 
 import { getAllRoom, getRoomRecordsBetweenTwoDatetime } from '../../../utils/apiUtil'
+import { saveTextFile } from '../../../utils/saveFileUtil';
 import type { iRoomRecordsBetweenTwoDatetime } from '../../../utils/apiUtil'
+
+import type { iRoom, iPeron, iAttendanceRecord } from '..';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -18,32 +21,30 @@ const disabledDate: RangePickerProps['disabledDate'] = current => {
   return current && current > moment().endOf('day');
 };
 
-
-interface iRoom {
-  _id: number,
-  name: string,
-  webcam_device_id: string
+const downloadCSVFile = (attendanceRecordList: iAttendanceRecord[]) => {
+  const fileName = 'attendance_record.csv'
+  let fileContent = 'No., Room Name, Person ID, Person Name, Date Time Record\n'
+  for (let i = 0; i < attendanceRecordList.length; i++) {
+    fileContent += `${i + 1}, ${attendanceRecordList[i].room.name}, ${attendanceRecordList[i].person._id}, ${attendanceRecordList[i].person.name}, ${attendanceRecordList[i].date_time_stamp}\n`
+  }
+  saveTextFile(fileName, fileContent)
 }
 
-interface iPeron {
-  _id: number,
-  name: string
+
+interface iSearchBarProps {
+  setAttendanceRecordQueryResult: Function
 }
 
-interface iAttendanceRecord {
-  _id: number,
-  room: iRoom,
-  person: iPeron,
-  date_time_stamp: string
-}
+export default function SearchBar({
+  setAttendanceRecordQueryResult
+}: iSearchBarProps) {
 
-export default function SearchBar() {
   const [count, setCount] = useState<number>(0);
   const [officeRoomNameList, setOfficeRoomNameList] = useState<iRoom[]>([]);
   const [officeRoomPickerData, setOfficeRoomPickerData] = useState<string | undefined>();
   const [datetimeRangePickerData, setDatetimeRangePickerOnChange] = useState<string[] | undefined>();
+  const [orderPickerData, setOrderPickerData] = useState<string>('person')
   const [commitButtonLoadings, setCommitButtonLoadings] = useState<boolean[]>([]);
-  const [attendanceRecordQueryResult, setAttendanceRecordQueryResult] = useState<iAttendanceRecord[]>([])
 
   useEffect(() => {
     // loading Room Name to show
@@ -76,6 +77,10 @@ export default function SearchBar() {
     setDatetimeRangePickerOnChange(string)
   };
 
+  const orderPickerOnChange = (value: string) => {
+    setOrderPickerData(value)
+  };
+
   const setCommitButtonStartLoading = (index: number) => {
     setCommitButtonLoadings(prevLoadings => {
       const newLoadings = [...prevLoadings];
@@ -103,17 +108,26 @@ export default function SearchBar() {
       const values: iRoomRecordsBetweenTwoDatetime = {
         room_name: officeRoomPickerData,
         start_datetime: datetimeRangePickerData[0],
-        end_datetime: datetimeRangePickerData[1]
+        end_datetime: datetimeRangePickerData[1],
+        order_by: (orderPickerData == 'person_name') ? "person_id" : orderPickerData,
       }
 
       getRoomRecordsBetweenTwoDatetime(values)
         .then((response) => {
-          const data = response.data
-          console.log(data)
+          let data = response.data
+
+          if (orderPickerData === 'person_name') {
+            data = data.sort((a1: iAttendanceRecord, a2: iAttendanceRecord) => {
+              return a1.person.name.localeCompare(a2.person.name)
+            })
+          }
+
           switch (index) {
-            case 1: // 下載
-              
             case 0: // 查詢
+              setAttendanceRecordQueryResult(data)
+              break;
+            case 1: // 下載
+              downloadCSVFile(data)
               setAttendanceRecordQueryResult(data)
               break;
           }
@@ -126,10 +140,7 @@ export default function SearchBar() {
         })
     } else {
       // Picker not finished
-
     }
-
-
   };
 
   return (
@@ -141,7 +152,7 @@ export default function SearchBar() {
           </span>
           <Select
             // defaultValue=""
-            style={{ width: 120 }}
+            style={{ width: 90 }}
             onChange={officeRoomPickerOnChange}
           >
             {
@@ -160,13 +171,31 @@ export default function SearchBar() {
             查詢時段:
           </span>
           <RangePicker
+            style={{ width: 370 }}
             // defaultPickerValue={}
             disabledDate={disabledDate}
             showTime
             onChange={datetimeRangePickerOnChange}
           />
         </div>
+
+        <div className={style.select_item}>
+          <span className={style.select_item_name}>
+            排序:
+          </span>
+          <Select
+            defaultValue="人員ID"
+            style={{ width: 100 }}
+            onChange={orderPickerOnChange}
+          >
+            <Option value={'person'}>人員ID</Option>
+            <Option value={'person_name'}>人員名稱</Option>
+            <Option value={'date_time_stamp'}>出勤時間</Option>
+          </Select>
+        </div>
       </div>
+
+
 
       <div className={style.commit_button_container}>
         <div className={style.commit_button}>

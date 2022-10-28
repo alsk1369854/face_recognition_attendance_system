@@ -1,0 +1,52 @@
+.table_item {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    font-size: 18px;
+
+    .table_item_number,
+    .table_item_office_name,
+    .table_item_person_id,
+    .table_item_person_name,
+    .table_item_attendance_record {
+        overflow: hidden;
+        text-overflow: ellipsis; //文本溢出显示省略号
+        white-space: nowrap; //文本不会换行
+        padding-left: 10px;
+    }
+    
+    .table_item_person_id,
+    .table_item_person_name,
+    .table_item_attendance_record{
+        padding-left: 40px;
+    }
+
+    .table_item_number {
+        width: 8%;
+    }
+
+    .table_item_office_name,
+    .table_item_person_id {
+        width: 18%;
+    }
+
+    .table_item_person_name {
+        width: 26%;
+    }
+
+    .table_item_attendance_record {
+        width: 30%;
+    }
+}
+
+.bottom_line{
+    background-color: rgb(206, 206, 206);
+    margin-bottom: 5px;
+    height: 1px;
+    width: 100%;
+}
+
+.divider {
+    color: rgb(206, 206, 206);
+    font-weight: normal;
+}
