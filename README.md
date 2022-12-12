@@ -17,7 +17,7 @@
 ## 項目畫面
 ### WebCam 
 <p align="center">
-<img heigh='550' src='https://raw.githubusercontent.com/alsk1369854/face_recognition_attendance_system/master/screenshots/Webcam.gif'/>
+<img heigh='450' src='https://raw.githubusercontent.com/alsk1369854/face_recognition_attendance_system/master/screenshots/Webcam.gif'/>
 </p>
 <br/>
 
